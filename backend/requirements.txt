@@ -1,0 +1,8 @@
+Flask
+flask-cors
+PyJWT
+bcrypt
+Flask-SQLAlchemy
+flask-marshmallow
+qrcode
+qrcode[pil]
