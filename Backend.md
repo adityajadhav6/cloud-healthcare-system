@@ -1,20 +1,49 @@
-# Folder Structure
+# 📁 Backend Folder Structure
 ```
-backend/
+
+📁 backend/
 │
-├── app/
-│   ├── auth/               # Auth and JWT logic
-│   ├── models/             # SQLAlchemy ORM models
-│   ├── ehr/                # EHR CRUD logic
-│   ├── appointments/       # Appointment logic
-│   ├── routes/             # API route blueprints
-│   ├── notifications/      # Email/SMS (modular)
-│   └── utils/              # Helper functions
+├── 📁 app/ # Core application package
+│ ├── 📁 auth/ # Authentication, JWT, and role validation
+│ │ ├── auth.py # Registration and login logic
+│ │ ├── jwt_handler.py # JWT encode/decode utilities
+│ │ ├── middleware.py # Token and role-based access decorators
+│ │ └── validators.py # Role validation helpers
+│ │
+│ ├── 📁 models/ # SQLAlchemy models
+│ │ ├── user_model.py # User model (Admin, Doctor, Patient)
+│ │ ├── ehr_model.py # EHR schema
+│ │ └── appointment_model.py # Appointment schema
+│ │
+│ ├── 📁 ehr/ # EHR CRUD logic
+│ │ └── ehr_crud.py
+│ │
+│ ├── 📁 appointments/ # Appointment booking and retrieval logic
+│ │ └── appointment_crud.py
+│ │
+│ ├── 📁 notifications/ # Email and SMS utilities
+│ │ ├── email_service.py
+│ │ └── sms_service.py
+│ │
+│ ├── 📁 routes/ # All API route blueprints
+│ │ ├── auth_routes.py
+│ │ ├── admin_routes.py
+│ │ ├── ehr_routes.py
+│ │ ├── appointment_routes.py
+│ │ └── user_routes.py
+│ │
+│ ├── 📁 utils/ # General helper utilities
+│ │ └── helpers.py
+│ │
+│ ├── init.py # Application factory (Flask app creator)
+│ └── extensions.py # Extensions like SQLAlchemy, Mail
 │
-├── instance/               # SQLite database (healthcare.db)
-├── config.py               # Environment and config management
-├── requirements.txt        # Python dependencies
-└── run.py                  # App runner
+├── 📁 instance/
+│ └── healthcare.db # SQLite database (auto-created)
+│
+├── config.py # App configuration (uses .env)
+├── run.py # App entry point for running Flask server
+├── requirements.txt # Python dependencies
 
 ```
 # API Endpoints
@@ -25,6 +54,8 @@ POST /api/auth/register
 Registers a new user.
 
 Request body:
+```
+
 {
   "name": "John Doe",
   "email": "john@example.com",
@@ -32,3 +63,5 @@ Request body:
   "role": "admin | doctor | patient",
   "admin_secret": "SUPER_SECRET_ADMIN_KEY" // Only if role is admin
 }
+
+```
