@@ -46,16 +46,15 @@
 ├── requirements.txt # Python dependencies
 
 ```
-# API Endpoints
+## API Endpoints
 
-- Auth Endpoints (/api/auth)
+1. Auth Endpoints (/api/auth)
 
 POST /api/auth/register
-Registers a new user.
+* Registers a new user.
 
 Request body:
 ```
-
 {
   "name": "John Doe",
   "email": "john@example.com",
