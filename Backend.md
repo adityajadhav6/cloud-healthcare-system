@@ -48,10 +48,8 @@
 ```
 ## API Endpoints
 
-1. Auth Endpoints (/api/auth)
-
-POST /api/auth/register
-* Registers a new user.
+1.  **Auth Endpoints (/api/auth):**
+    * POST /api/auth/register: Registers a new user.
 
 Request body:
 ```
@@ -64,3 +62,76 @@ Request body:
 }
 
 ```
+   * POST /api/auth/login: Logs in a user and returns a JWT token.
+Request body:
+```
+{
+  "email": "john@example.com",
+  "password": "securePassword"
+}
+```
+Response body:
+
+```
+{
+  "token": "<JWT_TOKEN>",
+  "role": "doctor",
+  "name": "John Doe",
+  "user_id": 2
+}
+```
+2. ### Admin Endpoints (/api/admin):###
+    * 🔐 Requires Admin JWT token
+    
+* GET /api/admin/doctors:
+    * Returns a list of all registered doctors.
+* GET /api/admin/patients:
+    * Returns a list of all registered patients.
+* GET /api/admin/ehrs:
+    * Returns all EHR records in the system.
+* DELETE /api/admin/doctor/<user_id>:
+    * Deletes a doctor by user ID.
+* DELETE /api/admin/patient/<user_id>:
+    * Deletes a patient by user ID.
+* DELETE /api/admin/ehr/<ehr_id>:
+    * Deletes any EHR by its ID.
+
+3. ### EHR Endpoints (/api/ehr): ###
+    * 🔐 Requires Doctor or Patient token
+    * POST /api/ehr/create: 
+        * Create a new EHR (Doctor only). 
+Request body:
+```
+{
+  "user_id": 5,
+  "name": "Alice",
+  "age": 30,
+  "gender": "Female",
+  "blood_group": "A+",
+  "conditions": "Diabetes",
+  "medications": "Metformin"
+}
+```
+* PUT /api/ehr/update/<ehr_id>
+    * Update EHR by ID (Doctor only).
+* DELETE /api/ehr/delete/<ehr_id>
+    * Delete EHR by ID (Doctor only).
+* GET /api/ehr/patient/<patient_id>
+    * Get all EHRs of a specific patient.
+* Doctor: can view their patients' EHRs
+* Patient: can view their own EHRs
+
+4. ### 📅 Appointment Endpoints (/api/appointments): ###
+    * 🔐 Authenticated access required
+    * POST /api/appointments/book
+        * Book an appointment (typically by patient).
+ Request Body:
+ ```
+ {
+  "doctor_id": 2,
+  "patient_id": 5,
+  "date": "2025-08-05",
+  "time": "15:00",
+  "reason": "Regular check-up"
+}
+ ```
