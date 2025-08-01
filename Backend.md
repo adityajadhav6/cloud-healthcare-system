@@ -1,5 +1,5 @@
 # Folder Structure
-
+```
 backend/
 │
 ├── app/
@@ -16,6 +16,7 @@ backend/
 ├── requirements.txt        # Python dependencies
 └── run.py                  # App runner
 
+```
 # API Endpoints
 
 - Auth Endpoints (/api/auth)
