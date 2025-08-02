@@ -54,8 +54,6 @@ def register_user():
 
     return jsonify({"message": f"{role.capitalize()} registered successfully!"}), 201
 
-
-
 def login_user():
     data = request.get_json()
     email = data.get("email")
