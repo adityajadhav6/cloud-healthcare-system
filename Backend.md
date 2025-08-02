@@ -100,7 +100,8 @@ Response body:
     * 🔐 Requires Doctor or Patient token
     * POST /api/ehr/create: 
         * Create a new EHR (Doctor only). 
-Request body:
+
+          Request body:
 ```
 {
   "user_id": 5,
@@ -125,7 +126,8 @@ Request body:
     * 🔐 Authenticated access required
     * POST /api/appointments/book
         * Book an appointment (typically by patient).
- Request Body:
+
+          Request Body:
  ```
  {
   "doctor_id": 2,
@@ -135,3 +137,8 @@ Request body:
   "reason": "Regular check-up"
 }
  ```
+
+* GET /api/appointments/patient/<patient_id>
+    * Returns all appointments booked by the patient.
+* GET /api/appointments/doctor/<doctor_id>
+    * Returns all appointments for a specific doctor.
