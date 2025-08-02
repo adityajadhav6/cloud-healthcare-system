@@ -31,12 +31,6 @@ def register_user():
     role = data.get("role", "").lower()
     admin_secret = data.get("admin_secret")
 
-    # 📧 Step 2.5: Validate email format
-    try:
-        validate_email(email)
-    except EmailNotValidError as e:
-        return jsonify({"error": str(e)}), 400
-
     # ✅ Step 3: Role validation
     if role not in VALID_ROLES:
         return jsonify({"message": f"Invalid role. Valid roles: {', '.join(VALID_ROLES)}"}), 400
@@ -59,6 +53,7 @@ def register_user():
     db.session.commit()
 
     return jsonify({"message": f"{role.capitalize()} registered successfully!"}), 201
+
 
 
 def login_user():
