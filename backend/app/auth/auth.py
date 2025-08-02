@@ -6,14 +6,14 @@ from app.auth.validators import VALID_ROLES
 from flask import request, jsonify
 from app.extensions import db
 from app.models.user_model import User
+from email_validator import validate_email, EmailNotValidError
 
 
-ALLOWED_FIELDS = {"name", "email", "password", "role"}
 def register_user():
     data = request.get_json()
 
     ALLOWED_FIELDS = {"name", "email", "password", "role", "admin_secret"}
-    REQUIRED_FIELDS = {"name", "email", "password"}
+    REQUIRED_FIELDS = {"name", "email", "password", "role"}
 
     # 🔍 Step 1: Check for unexpected fields
     extra_fields = set(data.keys()) - ALLOWED_FIELDS
@@ -26,10 +26,16 @@ def register_user():
         return jsonify({"error": f"Missing required fields: {', '.join(missing_fields)}"}), 400
 
     name = data.get("name")
-    email = data.get("email")
+    email = data.get("email").strip().lower()
     password = data.get("password")
-    role = data.get("role", "patient").lower()
+    role = data.get("role", "").lower()
     admin_secret = data.get("admin_secret")
+
+    # Step 2.5 : Validate email format
+    try:
+        validate_email(email)
+    except EmailNotValidError as e:
+        return jsonify({"error": str(e)}), 400
 
     # ✅ Step 3: Role validation
     if role not in VALID_ROLES:
@@ -53,8 +59,6 @@ def register_user():
     db.session.commit()
 
     return jsonify({"message": f"{role.capitalize()} registered successfully!"}), 201
-
-
 
 def login_user():
     data = request.get_json()
