@@ -55,7 +55,7 @@ def register_user():
 
     name = data.get("name")
     email = data.get("email").strip().lower()
-    password = data.get("password")
+    password = str(data.get("password", ""))  # ✅ Ensure password is treated as a string
     role = data.get("role", "").lower()
     admin_secret = data.get("admin_secret")
 

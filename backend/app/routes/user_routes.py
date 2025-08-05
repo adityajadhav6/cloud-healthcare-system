@@ -1,20 +1,19 @@
 # app/routes/user_routes.py
-
 from flask import Blueprint, jsonify
 from app.models.user_model import User
-
 user_routes = Blueprint('user_routes', __name__)
 
-@user_routes.route('/api/users/doctors', methods=['GET'])
+@user_routes.route('/doctors', methods=['GET'])
 def get_all_doctors():
     doctors = User.query.filter_by(role='doctor').all()
     return jsonify([
         {
             "id": doctor.id,
             "name": doctor.name,
-            "email": doctor.email
+            #"email": doctor.email  #(Patients dont need to see email of doctors)
         } for doctor in doctors
     ]), 200
+
 
 @user_routes.route('/api/users/patients', methods=['GET'])
 def get_all_patients():
