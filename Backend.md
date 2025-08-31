@@ -117,7 +117,7 @@ Response body:
     * Update EHR by ID (Doctor only).
 * DELETE /api/ehr/delete/<ehr_id>
     * Delete EHR by ID (Doctor only).
-* GET /api/ehr/patient/<patient_id>
+* GET /api/ehr/list
     * Get all EHRs of a specific patient.
 * Doctor: can view their patients' EHRs
 * Patient: can view their own EHRs
