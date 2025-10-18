@@ -1,19 +1,21 @@
-# app/routes/user_routes.py
+import json # Import the json library
 from flask import Blueprint, jsonify
 from app.models.user_model import User
+
 user_routes = Blueprint('user_routes', __name__)
 
 @user_routes.route('/doctors', methods=['GET'])
 def get_all_doctors():
     doctors = User.query.filter_by(role='doctor').all()
+    # UPDATED: Parse the availability string into a JSON object for the frontend
     return jsonify([
         {
             "id": doctor.id,
             "name": doctor.name,
-            #"email": doctor.email  #(Patients dont need to see email of doctors)
+            "specialization": doctor.specialization or "General Physician",
+            "availability": json.loads(doctor.availability) if doctor.availability else None
         } for doctor in doctors
     ]), 200
-
 
 @user_routes.route('/api/users/patients', methods=['GET'])
 def get_all_patients():

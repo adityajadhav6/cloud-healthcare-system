@@ -10,7 +10,7 @@ import DoctorDashboard from "./pages/doctor/DoctorDashboard";
 import PatientDashboard from "./pages/patient/PatientDashboard";
 import PrivateRoute from "./components/PrivateRoute";
 import ResetPassword from './pages/ResetPassword';
-
+import toaster from 'react-hot-toast';
 function App() {
   return (
     <Router>

@@ -6,6 +6,9 @@ const PrivateRoute = ({ children, allowedRoles }) => {
   const token = localStorage.getItem("token");
   const userRole = localStorage.getItem("role"); // Assume role is stored in localStorage after login
 
+  console.log("Token:", token);
+  console.log("User Role:", userRole);
+
   if (!token) {
     return <Navigate to="/login" />;
   }

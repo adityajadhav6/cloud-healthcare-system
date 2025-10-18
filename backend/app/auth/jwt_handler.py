@@ -1,26 +1,17 @@
-# app/auth/jwt_handler.py
+# backend/app/auth/jwt_handler.py
 
-import jwt
-from datetime import datetime, timedelta
-from config import Config
+from app.extensions import jwt
+from app.models import User
 
-SECRET_KEY = Config.SECRET_KEY
-
-def generate_token(user_id, role):
-    payload = {
-        'user_id': user_id,
-        'role': role,
-        'exp': datetime.utcnow() + timedelta(hours=12)
-    }
-    token = jwt.encode(payload, SECRET_KEY, algorithm='HS256')
-    return token
-
-
-def decode_token(token):
-    try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=['HS256'])
-        return payload['user_id'], payload.get('role')
-    except jwt.ExpiredSignatureError:
-        return None, None
-    except jwt.InvalidTokenError:
-        return None, None
+# This function is the missing link that connects Flask-JWT-Extended to your User model.
+# It tells the library how to load a user from the database given the ID from a token.
+@jwt.user_lookup_loader
+def user_lookup_callback(_jwt_header, jwt_data):
+    """
+    This function is called by Flask-JWT-Extended whenever a protected endpoint
+    is accessed, and must return an object that identifies the current user.
+    """
+    # The 'sub' claim is the standard place for the subject/identity of a JWT.
+    # In our login function, we set `identity=user.id`, so `jwt_data["sub"]` will be the user's ID.
+    identity = jwt_data["sub"]
+    return User.query.get(identity)

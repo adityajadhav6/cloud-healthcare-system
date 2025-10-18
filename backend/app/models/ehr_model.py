@@ -1,4 +1,4 @@
-# app/models/ehr_model.py
+# backend/app/models/ehr_model.py
 
 from app.extensions import db
 
@@ -12,4 +12,4 @@ class EHR(db.Model):
     gender = db.Column(db.String(10))
     blood_group = db.Column(db.String(10))
     conditions = db.Column(db.Text)
-    medications = db.Column(db.Text)
+    # medications = db.Column(db.Text) # <-- DELETE THIS LINE
