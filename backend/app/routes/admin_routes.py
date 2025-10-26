@@ -108,3 +108,21 @@ def delete_any_ehr(ehr_id):
     db.session.delete(ehr)
     db.session.commit()
     return jsonify({"message": "EHR deleted successfully"}), 200
+
+@admin_routes.route('/appointments', methods=['GET'])
+@jwt_required()
+def get_all_appointments():
+    admin_error = admin_required()
+    if admin_error:
+        return admin_error
+
+    appointments = Appointment.query.all()
+    result = [{
+        "id": appt.id,
+        "patient_id": appt.patient_id,
+        "doctor_id": appt.doctor_id,
+        "appointment_time": appt.appointment_time.isoformat(),
+        "status": appt.status,
+        "reason": appt.reason
+    } for appt in appointments]
+    return jsonify(result), 200
