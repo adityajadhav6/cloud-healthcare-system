@@ -1,7 +1,10 @@
+# app/__init__.py
+
 from flask import Flask
 from flask_cors import CORS
 from config import Config
 from app.extensions import db, migrate, jwt
+
 
 def create_app():
     """
@@ -25,6 +28,7 @@ def create_app():
         from app.routes.user_routes import user_routes
         from app.routes.appointment_routes import appointment_bp
         from app.routes.medication_routes import medication_bp
+        from app.routes.chatbot_routes import chatbot_routes  # ✅ chatbot import
 
         # Register all the blueprints with the app
         app.register_blueprint(auth_bp, url_prefix='/api/auth')
@@ -32,11 +36,13 @@ def create_app():
         app.register_blueprint(admin_routes, url_prefix='/api/admin')
         app.register_blueprint(user_routes, url_prefix='/api/users')
         app.register_blueprint(appointment_bp, url_prefix='/api/appointments')
-        app.register_blueprint(medication_bp) # Prefix is already defined in the blueprint file
+        app.register_blueprint(medication_bp)  # Prefix is already defined in the blueprint file
+
+        # ✅ Register chatbot under /api → /api/chatbot
+        app.register_blueprint(chatbot_routes, url_prefix='/api')
 
         # Import the jwt_handler to ensure the user_lookup_loader is registered.
-        # This is the crucial link for get_current_user() to work.
-        from app.auth import jwt_handler
+        from app.auth import jwt_handler  # noqa: F401
 
         # Note: db.create_all() is removed. Flask-Migrate now handles all database schema management.
 

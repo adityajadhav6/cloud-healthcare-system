@@ -7,3 +7,4 @@ flask-marshmallow
 qrcode
 qrcode[pil]
 email_validator
+psycopg2-binary
