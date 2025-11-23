@@ -1,0 +1,8 @@
+LOAD DATABASE
+     FROM sqlite:////Users/aditya/healthcare.db
+     INTO 'postgresql://neondb_owner:npg_4prktfcWEhG1@ep-long-haze-afog9x7d-pooler.c-2.us-west-2.aws.neon.tech/neondb?sslmode=require&channel_binding=require'
+
+ WITH include no drop, create tables, create indexes, reset sequences, data only
+
+ SET work_mem to '16MB',
+     maintenance_work_mem to '512 MB';

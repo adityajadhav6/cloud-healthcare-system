@@ -3,6 +3,7 @@ import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
+import Chatbot from "../../components/Chatbot";
 
 // --- Reusable Components ---
 
@@ -485,6 +486,7 @@ const PatientDashboard = () => {
             </div>
           </div>
         </div>
+        <Chatbot />
       </main>
       
       {isBookingModalOpen && <AppointmentBookingModal onClose={() => setBookingModalOpen(false)} onBookingSuccess={handleBookingSuccess} />}

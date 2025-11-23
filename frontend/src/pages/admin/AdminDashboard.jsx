@@ -8,7 +8,7 @@ import { Bar } from 'react-chartjs-2';
 // Register Chart.js components
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
-// --- Styles Object --- (Moved outside component for proper scope)
+// --- Styles Object --- (MOVED TO TOP-LEVEL SCOPE TO FIX REFERENCE ERROR)
 const styles = {
     page: { minHeight: "100vh", display: "flex", flexDirection: "row", background: "linear-gradient(90deg,#071021,#0f1724)", color: "#E6EEF3", fontFamily: "Inter, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial", },
     sidebar: { width: 320, minWidth: 260, padding: "2rem 1.5rem", borderRight: "1px solid rgba(255,255,255,0.04)", display: "flex", flexDirection: "column", boxSizing: "border-box", },
@@ -29,7 +29,6 @@ const styles = {
     statCard: { background: '#0b1220', padding: '1rem', borderRadius: '8px', display: 'flex', alignItems: 'center', gap: '1rem', minWidth: 160 },
     statCardTitle: { fontSize: 14, color: '#93c5fd', fontWeight: 600, marginBottom: '0.25rem' },
     statCardValue: { fontSize: 22, color: '#E6EEF3', fontWeight: 700 },
-    // Modal Styles
     modalOverlay: { position: 'fixed', inset: 0, background: 'rgba(0, 0, 0, 0.7)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 50 },
     modalContent: { background: '#1e293b', borderRadius: '12px', padding: '2rem', width: '90%', maxWidth: '700px', color: '#e2e8f0', boxShadow: '0 10px 30px rgba(0,0,0,0.4)'},
     modalHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', borderBottom: '1px solid #334155', paddingBottom: '1rem' },
@@ -37,31 +36,49 @@ const styles = {
     modalCloseButton: { background: 'none', border: 'none', color: '#9ca3af', fontSize: '2rem', cursor: 'pointer', lineHeight: 1 },
     modalBody: { maxHeight: '70vh', overflowY: 'auto', paddingRight: '0.5rem', },
     modalPre: { whiteSpace: 'pre-wrap', wordBreak: 'break-all', fontSize: '0.875rem', background: '#334155', padding: '1rem', borderRadius: '8px' },
-    modalMainButton: { width: '100%', marginTop: '1.5rem', background: '#2563eb', color: '#fff', fontWeight: 'bold', padding: '0.75rem', borderRadius: '8px', border: 'none', cursor: 'pointer', transition: 'background-color 0.2s ease', ':hover': { background: '#1d4ed8' } },
+    modalMainButton: { width: '100%', marginTop: '1.5rem', background: '#2563eb', color: '#fff', fontWeight: 'bold', padding: '0.75rem', borderRadius: '8px', border: 'none', cursor: 'pointer', transition: 'background-color 0.2s ease' },
     modalEhrContent: { fontSize: '0.95rem', lineHeight: 1.7, color: '#cbd5e1' },
     modalEhrTitle: { fontSize: '1.2rem', fontWeight: 600, color: '#e2e8f0', marginBottom: '0.5rem' },
     modalEhrSeparator: { border: 0, borderTop: '1px solid #475569', margin: '1rem 0' },
-    modalEhrList: { listStyle: 'disc', marginLeft: '1.5rem', marginTop: '0.5rem' }
+    modalEhrList: { listStyle: 'none', paddingLeft: 0, marginTop: '0.5rem' },
+    modalMedItem: { background: '#334155', padding: '0.5rem 0.75rem', borderRadius: '4px', marginBottom: '0.5rem', fontSize: '0.875rem'}
 };
 
 // --- Reusable Components ---
-const Sidebar = ({ handleLogout, currentView, setView }) => (
+const Sidebar = ({ handleLogout, currentView, setView, counts, handleEmergencyBloodRequest }) => (
   <div style={styles.sidebar}>
     <div style={styles.logo}>MediCare Admin</div>
-     {/* Counts are now inside AdminDashboard */}
-    <nav className="flex flex-col space-y-2 mt-4"> {/* Added mt-4 */}
+    <div style={styles.counts}>
+      <div>Doctors: {counts.doctors}</div>
+      <div>Patients: {counts.patients}</div>
+      <div>EHRs: {counts.ehrs}</div>
+      <div>Appointments: {counts.appointments}</div>
+    </div>
+    <nav className="flex flex-col space-y-2 mt-4">
       <button style={styles.menuButton(currentView === "menu")} onClick={() => setView("menu")}>🏠 Menu</button>
-      <button style={styles.menuButton(currentView === "doctors")} onClick={() => setView("doctors")}>🩺 Doctors</button>
-      <button style={styles.menuButton(currentView === "patients")} onClick={() => setView("patients")}>🧍 Patients</button>
-      <button style={styles.menuButton(currentView === "ehrs")} onClick={() => setView("ehrs")}>📋 EHRs</button>
-      <button style={styles.menuButton(currentView === "appointments")} onClick={() => setView("appointments")}>🗓️ Appointments</button>
+      <button style={styles.menuButton(currentView === "doctors")} onClick={() => setView("doctors")}>
+        🩺 Doctors <span style={{ opacity: 0.9 }}>{counts.doctors}</span>
+      </button>
+      <button style={styles.menuButton(currentView === "patients")} onClick={() => setView("patients")}>
+        🧍 Patients <span style={{ opacity: 0.9 }}>{counts.patients}</span>
+      </button>
+      <button style={styles.menuButton(currentView === "ehrs")} onClick={() => setView("ehrs")}>
+        📋 EHRs <span style={{ opacity: 0.9 }}>{counts.ehrs}</span>
+      </button>
+      <button style={styles.menuButton(currentView === "appointments")} onClick={() => setView("appointments")}>
+        🗓️ Appointments <span style={{ opacity: 0.9 }}>{counts.appointments}</span>
+      </button>
     </nav>
-    <div className="flex-grow"></div> {/* Pushes controls to bottom */}
+    <div className="flex-grow"></div>
     <div style={{ fontSize: 13, color: "rgba(230,238,243,0.6)" }}>
+       <button style={{ ...styles.smallBtn, width: '100%', background: '#dc2626' }} onClick={handleEmergencyBloodRequest}>
+          🚨 Send Blood Request
+       </button>
+       <div style={{ margin: '8px 0 8px 0', borderTop: '1px solid rgba(255,255,255,0.04)' }}></div>
        <div style={{ marginBottom: 8 }}>Backend: {import.meta.env.VITE_API_URL || "http://127.0.0.1:5000"}</div>
        <button
            style={{ ...styles.smallBtn, width: "100%" }}
-           onClick={() => window.location.reload()} // Simple page reload for refresh
+           onClick={() => window.location.reload()}
        >
            Refresh Page
        </button>
@@ -83,28 +100,77 @@ const StatCard = ({ title, value, icon }) => (
     </div>
 );
 
-const DetailModal = ({ title, data, type, onClose, doctors = [], patients = [] }) => { // Added doctors/patients for lookup
+const DetailModal = ({ title, data, type, onClose, doctors = [], patients = [] }) => {
+    
+    const [medications, setMedications] = useState([]);
+    const [medLoading, setMedLoading] = useState(false);
+    const [medError, setMedError] = useState('');
+
+    const API_BASE = import.meta.env.VITE_API_URL || "http://127.0.0.1:5000";
+    const getToken = () => localStorage.getItem("token") || "";
+    const authHeader = () => { const t = getToken(); return t ? { Authorization: `Bearer ${t}` } : {}; };
+
+    // Fetch medications when the modal opens for an EHR
+    useEffect(() => {
+        if (type === 'ehr' && data) {
+            const patientId = data.patient_id ?? data.user_id;
+            if (!patientId) {
+                setMedError("Could not find patient ID in EHR data.");
+                return;
+            }
+
+            const fetchMeds = async () => {
+                setMedLoading(true);
+                setMedError('');
+                try {
+                    const response = await axios.get(`${API_BASE}/api/medications/patient/${patientId}`, {
+                        headers: authHeader(),
+                    });
+                    setMedications(response.data.medications || []);
+                } catch (err) {
+                    console.error("Fetch Meds Error:", err);
+                    setMedError("Failed to fetch medications for this patient.");
+                } finally {
+                    setMedLoading(false);
+                }
+            };
+            fetchMeds();
+        }
+    }, [data, type]);
+
 
     const findNameById = (id, list) => {
+        if (!id) return "N/A";
         const item = list.find(p => p.id === id);
         return item ? item.name : `ID: ${id}`;
     };
 
+    const formatConditions = (conditions) => {
+        let conditionsText = "None Reported";
+        if (Array.isArray(conditions) && conditions.length > 0) {
+            conditionsText = conditions.join(', ');
+        } else if (typeof conditions === 'string' && conditions) {
+            try {
+                const parsed = JSON.parse(conditions.replace(/'/g, '"'));
+                if (Array.isArray(parsed) && parsed.length > 0) {
+                    conditionsText = parsed.join(', ');
+                } else {
+                     conditionsText = conditions;
+                }
+            } catch (e) {
+                 conditionsText = conditions;
+            }
+        }
+        return conditionsText;
+    };
+
     const renderEHRDetails = (ehrData) => {
-        // Find names using the passed lists
         const patientName = findNameById(ehrData.patient_id ?? ehrData.user_id, patients);
         const doctorName = findNameById(ehrData.doctor_id ?? ehrData.created_by, doctors);
 
-        let conditionsText = "None Reported";
-        if (Array.isArray(ehrData.conditions) && ehrData.conditions.length > 0) {
-            conditionsText = ehrData.conditions.join(', ');
-        } else if (typeof ehrData.conditions === 'string' && ehrData.conditions) {
-            conditionsText = ehrData.conditions; // Already a string
-        }
-
         return (
             <div style={styles.modalEhrContent}>
-                <h3 style={styles.modalEhrTitle}>Patient: {patientName}</h3>
+                <h3 style={styles.modalEhrTitle}>Patient: {patientName} (ID: {ehrData.patient_id ?? ehrData.user_id ?? 'N/A'})</h3>
                 <p><strong>EHR Record ID:</strong> {ehrData.ehr_id}</p>
                 <p><strong>Created by:</strong> Dr. {doctorName}</p>
                 <hr style={styles.modalEhrSeparator} />
@@ -112,14 +178,33 @@ const DetailModal = ({ title, data, type, onClose, doctors = [], patients = [] }
                 <p><strong>Gender:</strong> {ehrData.gender || 'N/A'}</p>
                 <p><strong>Blood Group:</strong> {ehrData.blood_group || 'N/A'}</p>
                 <hr style={styles.modalEhrSeparator} />
-                <p><strong>Conditions:</strong> {conditionsText}</p>
+                <p><strong>Conditions:</strong> {formatConditions(ehrData.conditions)}</p>
+                
+                {/* --- Medications Section --- */}
+                <hr style={styles.modalEhrSeparator} />
+                <p><strong>Medications:</strong></p>
+                {medLoading && <p style={{fontSize: '0.875rem', color: '#9ca3af'}}>Loading medications...</p>}
+                {medError && <p style={{fontSize: '0.875rem', color: '#f87171'}}>{medError}</p>}
+                {!medLoading && !medError && (
+                    <ul style={styles.modalEhrList}>
+                        {medications.length > 0 ? medications.map(med => (
+                            <li key={med.id} style={styles.modalMedItem}>
+                                <strong style={{color: '#5eead4'}}>{med.name}</strong> ({med.dosage} - {med.frequency})
+                                <br/>
+                                <span style={{fontSize: '0.75rem', color: '#9ca3af'}}>
+                                    Prescribed by Dr. {findNameById(med.prescribed_by_doctor_id, doctors)} on {new Date(med.start_date).toLocaleDateString()}
+                                </span>
+                                <button style={styles.dangerBtn} onClick={() => handleDeleteMedication(med.id)}>Delete</button>
+                            </li>
+                        )) : <li>No medications found for this patient.</li>}
+                    </ul>
+                )}
             </div>
         );
     };
 
     const renderAppointmentDetails = (apptData) => {
         const appTime = apptData.appointment_time ? new Date(apptData.appointment_time + 'Z').toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short', hour12: false }) : 'N/A';
-        // Find names
         const patientName = findNameById(apptData.patient_id, patients);
         const doctorName = findNameById(apptData.doctor_id, doctors);
 
@@ -136,6 +221,21 @@ const DetailModal = ({ title, data, type, onClose, doctors = [], patients = [] }
         );
     };
 
+    const handleDeleteMedication = async (medicationId) => {
+        if (!window.confirm("Are you sure you want to delete this medication?")) return;
+    
+        try {
+          const token = localStorage.getItem("token");
+          const headers = { Authorization: `Bearer ${token}` };
+          await axios.delete(`${API_BASE}/api/medications/admin/${medicationId}`, { headers });
+          setMedications((prev) => prev.filter((med) => med.id !== medicationId));
+          alert("Medication deleted successfully.");
+        } catch (err) {
+          console.error("Failed to delete medication:", err);
+          setMedError("Failed to delete medication. Please try again later.");
+        }
+    };
+
     return (
         <div style={styles.modalOverlay}>
             <div style={styles.modalContent}>
@@ -146,6 +246,7 @@ const DetailModal = ({ title, data, type, onClose, doctors = [], patients = [] }
                 <div style={styles.modalBody}>
                     {type === 'ehr' && data ? renderEHRDetails(data) : null}
                     {type === 'appointment' && data ? renderAppointmentDetails(data) : null}
+                    {/* Fallback for other types or if type is not specified */}
                     {type !== 'ehr' && type !== 'appointment' && data ? (
                         <pre style={styles.modalPre}>{JSON.stringify(data, null, 2)}</pre>
                     ) : null}
@@ -172,6 +273,7 @@ const AdminDashboard = () => {
   const [selectedDetailItem, setSelectedDetailItem] = useState(null);
   const [detailModalTitle, setDetailModalTitle] = useState("");
   const [detailModalType, setDetailModalType] = useState("");
+  const [medications, setMedications] = useState([]);
 
   const API_BASE = import.meta.env.VITE_API_URL || "http://127.0.0.1:5000";
   const navigate = useNavigate();
@@ -187,10 +289,9 @@ const AdminDashboard = () => {
     if (!['doctors', 'patients', 'ehrs', 'appointments'].includes(endpoint)) {
         console.error(`Invalid endpoint requested: ${endpoint}`);
         setError(`Internal configuration error: Invalid endpoint ${endpoint}`);
-        return;
+        return Promise.reject(new Error(`Invalid endpoint ${endpoint}`));
     }
     specificLoadingSetter(true);
-    // Keep existing error until success
     try {
       const response = await axios.get(`${API_BASE}/api/admin/${endpoint}`, {
         headers: authHeader(),
@@ -201,14 +302,10 @@ const AdminDashboard = () => {
           if (Array.isArray(response.data[endpoint])) { dataArray = response.data[endpoint]; }
           else if (Array.isArray(response.data.results)) { dataArray = response.data.results; }
           else if (Array.isArray(response.data.data)) { dataArray = response.data.data; }
-          // Handle specific case for EHRs if backend returns {"ehrs": [...]}
           else if (endpoint === 'ehrs' && Array.isArray(response.data.ehrs)) { dataArray = response.data.ehrs; }
-          // Handle specific case for appointments if backend returns {"appointments": [...]}
           else if (endpoint === 'appointments' && Array.isArray(response.data.appointments)) { dataArray = response.data.appointments; }
       }
       setter(dataArray);
-      setError(""); // Clear error on success
-
     } catch (err) {
       console.error("fetchData Error:", endpoint, err);
       let errorMsg = `Failed to fetch ${endpoint}.`;
@@ -216,22 +313,19 @@ const AdminDashboard = () => {
           errorMsg += ` Status: ${err.response.status} - ${err.response.data?.msg || err.response.data?.error || 'Server error'}`;
           if (err.response.status === 401 || err.response.status === 403) {
              errorMsg += " Please log in again or check permissions.";
-             // Force logout on critical auth errors
              localStorage.clear();
              navigate("/login");
           }
-      } else if (err.request) {
-           errorMsg += " Network Error or server not responding.";
-      } else {
-           errorMsg += ` ${err.message}`;
-      }
-      setError(errorMsg);
-      // Don't clear data on error, keep the old data visible
-      // setter([]);
+      } else if (err.request) { errorMsg += " Network Error or server not responding."; }
+       else { errorMsg += ` ${err.message}`; }
+      setError(prev => prev ? `${prev}\n${errorMsg}` : errorMsg);
+      setter([]);
+      throw err;
     } finally {
       specificLoadingSetter(false);
     }
   };
+
 
   useEffect(() => {
     const name = localStorage.getItem("name");
@@ -246,21 +340,18 @@ const AdminDashboard = () => {
     (async () => {
         setLoadingInitial(true);
         setError("");
-        // Use Promise.allSettled to allow some requests to fail without stopping others
         const results = await Promise.allSettled([
             fetchData("doctors", setDoctors, setLoadingInitial),
             fetchData("patients", setPatients, setLoadingInitial),
             fetchData("ehrs", setEhrs, setLoadingInitial),
             fetchData("appointments", setAppointments, setLoadingInitial),
         ]);
-        // Check if any critical request failed (optional)
-        results.forEach(result => {
-            if (result.status === 'rejected') {
-                console.error("Initial fetch failed for one or more resources.");
-                // Error is already set within fetchData
-            }
-        });
-        setLoadingInitial(false); // Set initial loading false after all fetches attempt
+        
+        let anyFailed = results.some(result => result.status === 'rejected');
+        if (!anyFailed) {
+             setError("");
+        }
+        setLoadingInitial(false);
     })();
   }, [navigate]);
 
@@ -272,8 +363,10 @@ const AdminDashboard = () => {
 
     try {
         const token = getToken();
-        const deleteEndpoint = `${API_BASE}/api/admin/${endpointType}/${id}`;
+        const deleteEndpoint = `${API_BASE}/api/admin/${endpointType}/${id}`; 
+
         await axios.delete(deleteEndpoint, { headers: { Authorization: `Bearer ${token}` } });
+
         setter(prevList => prevList.filter((item) => item[idFieldName] !== id));
         alert(`${type.charAt(0).toUpperCase() + type.slice(1)} deleted successfully.`);
     } catch (err) {
@@ -293,8 +386,9 @@ const AdminDashboard = () => {
       setDetailModalType(type);
   };
 
-  const ehrPerDoctorData = (doctors.length > 0 && ehrs.length > 0) ? {
-      labels: doctors.map(d => `Dr. ${d.name} (ID: ${d.id})`),
+  // Chart Data
+  const ehrPerDoctorData = (doctors.length > 0) ? {
+      labels: doctors.map(d => `Dr. ${d.name || 'Unknown'} (ID: ${d.id})`),
       datasets: [{
           label: '# of EHR Records Created',
           data: doctors.map(d => ehrs.filter(e => e.doctor_id === d.id || e.created_by === d.id).length),
@@ -312,9 +406,54 @@ const AdminDashboard = () => {
 
   const renderLoading = () => <div style={{ padding: '20px', textAlign: 'center', fontSize: 16 }}>Loading...</div>;
 
+  // Helper to format conditions in the table
+  const formatConditions = (conditions) => {
+        let conditionsText = "None";
+        if (Array.isArray(conditions) && conditions.length > 0) {
+            conditionsText = conditions.join(', ');
+        } else if (typeof conditions === 'string' && conditions) {
+            try {
+                // Try parsing stringified list like "['Fever']"
+                const parsed = JSON.parse(conditions.replace(/'/g, '"'));
+                if (Array.isArray(parsed) && parsed.length > 0) {
+                    conditionsText = parsed.join(', ');
+                } else { conditionsText = conditions; } // Fallback
+            } catch (e) { conditionsText = conditions; } // Fallback
+        }
+        // Truncate
+        return conditionsText.length > 30 ? conditionsText.substring(0, 30) + '...' : conditionsText;
+  };
+
+  const handleEmergencyBloodRequest = async () => {
+    const message = prompt("Enter the message for the emergency blood request:", "We urgently need blood donations. Please help if you can.");
+    if (!message) return;
+
+    try {
+      const token = localStorage.getItem("token");
+      const headers = { Authorization: `Bearer ${token}` };
+      // *** NOTE: This endpoint needs to be implemented in your backend ***
+      await axios.post(`${API_BASE}/api/admin/emergency-blood-request`, { message }, { headers });
+      alert("Emergency blood request emails sent successfully.");
+    } catch (err) {
+      console.error("Failed to send emergency blood request:", err);
+      alert(`Failed to send emergency blood request: ${err.response?.data?.error || err.message}`);
+    }
+  };
+
   return (
     <div style={styles.page}>
-      <Sidebar handleLogout={handleLogout} currentView={view} setView={setView} />
+      <Sidebar
+          handleLogout={handleLogout}
+          currentView={view}
+          setView={setView}
+          counts={{
+              doctors: loadingInitial ? '...' : doctors.length,
+              patients: loadingInitial ? '...' : patients.length,
+              ehrs: loadingInitial ? '...' : ehrs.length,
+              appointments: loadingInitial ? '...' : appointments.length,
+          }}
+          handleEmergencyBloodRequest={handleEmergencyBloodRequest}
+      />
 
       <div style={styles.contentWrap}>
         {error && <div style={styles.errorBanner}>{error}</div>}
@@ -335,7 +474,7 @@ const AdminDashboard = () => {
                      <div style={{marginTop: '2rem'}}>
                           <h3 style={{...styles.title, color: '#e2e8f0', marginBottom: '1rem', fontSize: '1.25rem'}}>Analytics: EHR Records per Doctor</h3>
                           {(doctors.length > 0) ? (
-                              <div style={{ background: 'rgba(30, 41, 59, 0.8)', padding: '1rem', borderRadius: '8px', height: '300px' }}>
+                              <div style={{ background: 'rgba(30, 41, 59, 0.8)', padding: '1rem', borderRadius: '8px', height: '300px', minWidth: '300px' }}>
                                    <Bar options={chartOptions} data={ehrPerDoctorData} />
                               </div>
                           ) : ( <p style={{color: '#9ca3af', marginTop: '1rem'}}>No doctor data available to display chart.</p> )}
@@ -405,8 +544,8 @@ const AdminDashboard = () => {
                             <td style={styles.td}>{e.patient_id ?? e.user_id ?? "-"}</td>
                             <td style={styles.td}>{e.doctor_id ?? e.created_by ?? "-"}</td>
                             <td style={styles.td}>{e.name ?? "N/A"}</td>
-                            <td style={styles.td} title={Array.isArray(e.conditions) ? e.conditions.join(', ') : e.conditions}>
-                                {Array.isArray(e.conditions) ? (e.conditions.join(', ').length > 30 ? e.conditions.join(', ').substring(0, 30) + '...' : e.conditions.join(', ')) : (typeof e.conditions === 'string' && e.conditions.length > 30 ? e.conditions.substring(0, 30) + '...' : e.conditions || 'None')}
+                            <td style={styles.td} title={formatConditions(e.conditions)}>
+                                {formatConditions(e.conditions)}
                             </td>
                             <td style={styles.td}>
                               <button style={{...styles.smallBtn, background: '#1d4ed8', marginRight: 8}} onClick={() => openDetailModal(e, `EHR Record Details (ID: ${e.ehr_id})`, 'ehr')}>View</button>
@@ -442,7 +581,6 @@ const AdminDashboard = () => {
                                     <td style={styles.td}>{app.status || 'N/A'}</td>
                                     <td style={styles.td}>
                                          <button style={{...styles.smallBtn, background: '#1d4ed8'}} onClick={() => openDetailModal(app, `Appointment Details (ID: ${app.id})`, 'appointment')}>View</button>
-                                         {/* Optional: Add admin delete button for appointments */}
                                          {/* <button style={{...styles.dangerBtn, marginLeft: 8}} onClick={() => handleDelete("appointment", app.id, setAppointments)}>Delete</button> */}
                                     </td>
                                </tr>

@@ -33,36 +33,63 @@ const StatCard = ({ title, value, icon }) => (
 
 // --- Modal Components ---
 
-const PatientEHRModal = ({ patient, onClose, onDataChange }) => {
+const PatientEHRModal = ({ patient, onClose, onDataChange, doctors = [] }) => {
     const [ehrRecords, setEhrRecords] = useState([]);
+    const [medications, setMedications] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [medLoading, setMedLoading] = useState(true);
     const [error, setError] = useState('');
+    const [medError, setMedError] = useState('');
     const [editingEhr, setEditingEhr] = useState(null);
     const [addingMedicationTo, setAddingMedicationTo] = useState(null);
-
-    // List of valid blood groups
     const bloodGroups = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
+    const API_BASE = import.meta.env.VITE_API_URL || "http://127.0.0.1:5000";
+
+    const findDoctorName = (id) => {
+        const doctor = doctors.find(doc => doc.id === id);
+        return doctor ? doctor.name : `ID: ${id}`;
+    };
+
+    const getToken = () => localStorage.getItem("token") || "";
+
+    const fetchMeds = async () => {
+        if (!patient) return;
+        setMedLoading(true);
+        setMedError('');
+        try {
+            const headers = { Authorization: `Bearer ${getToken()}` };
+            const response = await axios.get(`${API_BASE}/api/medications/patient/${patient.id}`, { headers });
+            setMedications(response.data.medications || []);
+        } catch (err) {
+            setMedError('Failed to fetch medications.');
+            console.error("Fetch Meds Error:", err);
+        } finally {
+            setMedLoading(false);
+        }
+    };
 
     useEffect(() => {
+        if (!patient) return;
+        const token = localStorage.getItem("token");
+        const headers = { Authorization: `Bearer ${token}` };
+
         const fetchEHR = async () => {
-            if (!patient) return;
             setLoading(true);
             setError('');
             try {
-                const token = localStorage.getItem("token");
-                const response = await axios.get(`http://127.0.0.1:5000/api/ehr/patient/${patient.id}`, {
-                    headers: { Authorization: `Bearer ${token}` }
-                });
+                const response = await axios.get(`${API_BASE}/api/ehr/patient/${patient.id}`, { headers });
                 setEhrRecords(response.data.ehrs || []);
             } catch (err) {
-                setError(`Failed to fetch EHR for ${patient.name}. Ensure the endpoint exists and the token is valid.`);
+                setError(`Failed to fetch EHR for ${patient.name}.`);
                 console.error("Fetch EHR Error:", err);
             } finally {
                 setLoading(false);
             }
         };
+
         fetchEHR();
-    }, [patient]);
+        fetchMeds(); // Fetch both on modal open
+    }, [patient, API_BASE]);
 
     const handleEditSubmit = async (e, ehrId) => {
         e.preventDefault();
@@ -70,7 +97,7 @@ const PatientEHRModal = ({ patient, onClose, onDataChange }) => {
         const updatedData = {
             age: parseInt(formData.get('age')) || null,
             gender: formData.get('gender'),
-            blood_group: formData.get('blood_group'), // Will be read from the select
+            blood_group: formData.get('blood_group'),
             conditions: formData.get('conditions').split(',').map(c => c.trim()).filter(c => c)
         };
         Object.keys(updatedData).forEach(key => (updatedData[key] == null || updatedData[key] === '') && delete updatedData[key]);
@@ -82,12 +109,12 @@ const PatientEHRModal = ({ patient, onClose, onDataChange }) => {
         }
 
         try {
-            const token = localStorage.getItem("token");
-            await axios.put(`http://127.0.0.1:5000/api/ehr/update/${ehrId}`, updatedData, {
+            const token = getToken();
+            await axios.put(`${API_BASE}/api/ehr/update/${ehrId}`, updatedData, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setEditingEhr(null);
-            const response = await axios.get(`http://127.0.0.1:5000/api/ehr/patient/${patient.id}`, { headers: { Authorization: `Bearer ${token}` } });
+            const response = await axios.get(`${API_BASE}/api/ehr/patient/${patient.id}`, { headers: { Authorization: `Bearer ${token}` } });
             setEhrRecords(response.data.ehrs || []);
             alert('EHR updated successfully!');
         } catch(err) {
@@ -96,11 +123,56 @@ const PatientEHRModal = ({ patient, onClose, onDataChange }) => {
         }
     };
     
+    // ✅ UPDATED THIS FUNCTION
     const handleMedicationSubmit = async (e, ehrId) => {
-        // ... (This function is unchanged)
+        e.preventDefault();
+        const formData = new FormData(e.target);
+        const medData = {
+            ehr_id: ehrId,
+            name: formData.get('medName'),
+            dosage: formData.get('dosage'),
+            frequency: formData.get('frequency'),
+            notes: formData.get('notes')
+        };
+        
+        if (!medData.name || !medData.dosage || !medData.frequency) {
+            alert('Medication name, dosage, and frequency are required.');
+            return;
+        }
+
+        try {
+            const token = getToken();
+            const headers = { Authorization: `Bearer ${token}` };
+            // 1. Create the new medication
+            await axios.post(`${API_BASE}/api/medications/`, medData, { headers });
+            
+            setAddingMedicationTo(null); // Close the form
+            alert('Medication added successfully!');
+
+            // 2. Refresh the medication list
+            fetchMeds(); // Call the fetchMeds function to get the updated list
+
+        } catch(err) {
+             alert(err.response?.data?.error || 'Failed to add medication.');
+             console.error("Add Medication Error:", err);
+        }
     };
 
     if (!patient) return null;
+    
+    const formatConditions = (conditions) => {
+        let conditionsText = "None";
+        if (Array.isArray(conditions) && conditions.length > 0) {
+            conditionsText = conditions.join(', ');
+        } else if (typeof conditions === 'string' && conditions) {
+            try {
+                const parsed = JSON.parse(conditions.replace(/'/g, '"'));
+                if (Array.isArray(parsed) && parsed.length > 0) { conditionsText = parsed.join(', '); } 
+                else { conditionsText = conditions; }
+            } catch (e) { conditionsText = conditions; }
+        }
+        return conditionsText;
+    };
 
     return (
         <div className="fixed inset-0 bg-black bg-opacity-70 flex justify-center items-center z-50">
@@ -117,14 +189,11 @@ const PatientEHRModal = ({ patient, onClose, onDataChange }) => {
                     {ehrRecords.map(ehr => (
                         <div key={ehr.id} className="bg-slate-700 p-4 rounded-lg mb-4">
                             {editingEhr === ehr.id ? (
-                                // --- EDIT FORM ---
                                 <form onSubmit={(e) => handleEditSubmit(e, ehr.id)} className="space-y-3 text-sm">
                                     <h3 className="font-semibold text-lg mb-2">Editing Record ID: {ehr.id}</h3>
                                     <div className="grid grid-cols-2 gap-4">
                                         <input name="age" type="number" defaultValue={ehr.age} placeholder="Age" className="bg-slate-600 p-2 rounded"/>
                                         <input name="gender" defaultValue={ehr.gender} placeholder="Gender" className="bg-slate-600 p-2 rounded"/>
-                                        
-                                        {/* ✅ UPDATED: Blood group input changed to select */}
                                         <select
                                             name="blood_group"
                                             defaultValue={ehr.blood_group}
@@ -137,14 +206,13 @@ const PatientEHRModal = ({ patient, onClose, onDataChange }) => {
                                             ))}
                                         </select>
                                     </div>
-                                    <textarea name="conditions" defaultValue={(ehr.conditions || []).join(', ')} placeholder="Conditions (comma-separated)" className="w-full bg-slate-600 p-2 rounded" rows="2"></textarea>
+                                    <textarea name="conditions" defaultValue={formatConditions(ehr.conditions)} placeholder="Conditions (comma-separated)" className="w-full bg-slate-600 p-2 rounded" rows="2"></textarea>
                                     <div className="flex justify-end gap-2">
                                         <button type="button" onClick={() => setEditingEhr(null)} className="bg-slate-500 px-3 py-1 rounded">Cancel</button>
                                         <button type="submit" className="bg-cyan-500 px-3 py-1 rounded">Save Changes</button>
                                     </div>
                                 </form>
                             ) : (
-                                // --- DISPLAY VIEW ---
                                 <div>
                                     <div className="flex justify-between items-center mb-2">
                                         <h3 className="font-semibold text-lg">Record ID: {ehr.id}</h3>
@@ -154,12 +222,11 @@ const PatientEHRModal = ({ patient, onClose, onDataChange }) => {
                                     <p><strong>Age:</strong> {ehr.age || 'N/A'}</p>
                                     <p><strong>Gender:</strong> {ehr.gender || 'N/A'}</p>
                                     <p><strong>Blood Group:</strong> {ehr.blood_group || 'N/A'}</p>
-                                    <p><strong>Conditions:</strong> {(Array.isArray(ehr.conditions) ? ehr.conditions.join(', ') : (ehr.conditions || 'None'))}</p>
+                                    <p><strong>Conditions:</strong> {formatConditions(ehr.conditions)}</p>
                                     <button onClick={() => setAddingMedicationTo(ehr.id)} className="mt-2 text-xs bg-green-600 hover:bg-green-700 px-2 py-1 rounded">Add Medication</button>
                                 </div>
                             )}
                              {addingMedicationTo === ehr.id && (
-                                // --- MEDICATION FORM ---
                                 <form onSubmit={(e) => handleMedicationSubmit(e, ehr.id)} className="mt-4 p-3 bg-slate-600 rounded space-y-2 text-sm">
                                      <h4 className="font-semibold">Add New Medication for Record {ehr.id}</h4>
                                      <input name="medName" placeholder="Medication Name" required className="w-full bg-slate-500 p-2 rounded"/>
@@ -174,6 +241,25 @@ const PatientEHRModal = ({ patient, onClose, onDataChange }) => {
                             )}
                         </div>
                     ))}
+
+                    <div className="bg-slate-700 p-4 rounded-lg">
+                        <h3 className="font-semibold text-lg mb-3 text-cyan-300">Medication History for {patient.name}</h3>
+                        {medLoading && <p>Loading medications...</p>}
+                        {medError && <p className="text-red-400">{medError}</p>}
+                        {!medLoading && !medError && (
+                            <ul className="space-y-2">
+                                {medications.length > 0 ? medications.map(med => (
+                                    <li key={med.id} className="bg-slate-600 p-3 rounded-md text-sm">
+                                        <p className="font-bold">{med.name}</p>
+                                        <p className="text-gray-300">{med.dosage} - {med.frequency}</p>
+                                        <p className="text-xs text-gray-400 mt-1">
+                                            Prescribed by Dr. {findDoctorName(med.prescribed_by_doctor_id)}
+                                        </p>
+                                    </li>
+                                )) : <p className="text-gray-400">No medications found for this patient.</p>}
+                            </ul>
+                        )}
+                    </div>
                 </div>
                 <button onClick={onClose} className="w-full mt-6 bg-cyan-500 text-white font-bold py-3 rounded-lg hover:bg-cyan-600">Close</button>
             </div>
@@ -186,9 +272,9 @@ const NewEHRModal = ({ patientId, onClose, onDataChange }) => {
     const [formData, setFormData] = useState({ name: '', age: '', gender: '', blood_group: '', conditions: ''});
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
-
-    // List of valid blood groups
     const bloodGroups = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
+    const API_BASE = import.meta.env.VITE_API_URL || "http://127.0.0.1:5000";
+
 
     const handleChange = (e) => {
         setFormData({...formData, [e.target.name]: e.target.value });
@@ -208,7 +294,7 @@ const NewEHRModal = ({ patientId, onClose, onDataChange }) => {
                 blood_group: formData.blood_group,
                 conditions: formData.conditions.split(',').map(c => c.trim()).filter(c => c)
             };
-            await axios.post(`http://127.0.0.1:5000/api/ehr/create`, dataToSend, {
+            await axios.post(`${API_BASE}/api/ehr/create`, dataToSend, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             onDataChange();
@@ -232,8 +318,6 @@ const NewEHRModal = ({ patientId, onClose, onDataChange }) => {
                     <input name="name" value={formData.name} onChange={handleChange} placeholder="Patient Name" required className="w-full bg-slate-700 p-2 rounded"/>
                     <input name="age" type="number" value={formData.age} onChange={handleChange} placeholder="Age" required className="w-full bg-slate-700 p-2 rounded"/>
                     <input name="gender" value={formData.gender} onChange={handleChange} placeholder="Gender" required className="w-full bg-slate-700 p-2 rounded"/>
-                    
-                    {/* ✅ UPDATED: Blood group input changed to select */}
                     <select
                         name="blood_group"
                         value={formData.blood_group}
@@ -246,7 +330,6 @@ const NewEHRModal = ({ patientId, onClose, onDataChange }) => {
                             <option key={group} value={group}>{group}</option>
                         ))}
                     </select>
-
                     <textarea name="conditions" value={formData.conditions} onChange={handleChange} placeholder="Conditions (comma-separated)" className="w-full bg-slate-700 p-2 rounded" rows="3"></textarea>
                     {error && <p className="text-sm text-red-400">{error}</p>}
                     <div className="flex justify-end space-x-4 pt-2">
@@ -354,6 +437,7 @@ const DoctorDashboard = () => {
   const [appointments, setAppointments] = useState([]);
   const [doctorPatients, setDoctorPatients] = useState([]);
   const [allPatients, setAllPatients] = useState([]);
+  const [doctors, setDoctors] = useState([]); // ✅ NEW: State for all doctors
   const [doctorInfo, setDoctorInfo] = useState({ name: "Doctor" });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -362,7 +446,8 @@ const DoctorDashboard = () => {
   const [patientForNewEHR, setPatientForNewEHR] = useState(null);
   const [isAllPatientsModalOpen, setIsAllPatientsModalOpen] = useState(false);
   const [isAppointmentModalOpen, setIsAppointmentModalOpen] = useState(false);
-
+  
+  const API_BASE = import.meta.env.VITE_API_URL || "http://127.0.0.1:5000";
   const navigate = useNavigate();
 
   const fetchData = async () => {
@@ -381,15 +466,18 @@ const DoctorDashboard = () => {
     try {
       const headers = { Authorization: `Bearer ${token}` };
 
-      const [appointResponse, doctorPatientsResponse, allPatientsResponse] = await Promise.all([
-        axios.get("http://127.0.0.1:5000/api/appointments/doctor", { headers }),
-        axios.get("http://127.0.0.1:5000/api/users/doctor/patients", { headers }),
-        axios.get("http://127.0.0.1:5000/api/admin/patients", { headers }) 
+      // ✅ UPDATED: Fetch allDoctors list as well
+      const [appointResponse, doctorPatientsResponse, allPatientsResponse, allDoctorsResponse] = await Promise.all([
+        axios.get(`${API_BASE}/api/appointments/doctor`, { headers }),
+        axios.get(`${API_BASE}/api/users/doctor/patients`, { headers }),
+        axios.get(`${API_BASE}/api/admin/patients`, { headers }), 
+        axios.get(`${API_BASE}/api/users/doctors`) // Public endpoint, no token needed
       ]);
 
       setAppointments(appointResponse.data.appointments || []);
       setDoctorPatients(doctorPatientsResponse.data || []);
       setAllPatients(allPatientsResponse.data || []);
+      setDoctors(allDoctorsResponse.data || []); // ✅ Set doctors state
 
     } catch (err) {
       console.error("Error fetching doctor data:", err);
@@ -397,6 +485,7 @@ const DoctorDashboard = () => {
        if (err.response?.config?.url?.includes('/admin/patients')) specificError += " Could not fetch the full patient list.";
        else if (err.response?.config?.url?.includes('/doctor/patients')) specificError += " Could not fetch your assigned patients.";
        else if (err.response?.config?.url?.includes('/appointments/doctor')) specificError += " Could not fetch appointments.";
+       else if (err.response?.config?.url?.includes('/users/doctors')) specificError += " Could not fetch doctor list.";
       setError(specificError);
     } finally {
       setLoading(false);
@@ -420,7 +509,7 @@ const DoctorDashboard = () => {
       try {
           const token = localStorage.getItem("token");
           const headers = { Authorization: `Bearer ${token}` };
-          await axios.put(`http://127.0.0.1:5000/api/appointments/${appointmentId}/status`,
+          await axios.put(`${API_BASE}/api/appointments/${appointmentId}/status`,
               { status: newStatus },
               { headers }
           );
@@ -488,12 +577,14 @@ const DoctorDashboard = () => {
                           const appDate = new Date(app.appointment_time + 'Z').toLocaleDateString('en-IN', { day: '2-digit', month: 'short'});
                          return (
                               <div key={app.id} className="bg-slate-700 p-3 rounded-lg flex flex-col sm:flex-row justify-between sm:items-center text-sm hover:bg-slate-600 transition-colors">
+                                  {/* Appointment Details */}
                                   <div className="mb-2 sm:mb-0 mr-4">
                                       <p className="font-semibold">{patientName}</p>
                                       <p className="text-xs text-gray-400">{appDate} at {appTime}</p>
                                       <p className="text-xs text-cyan-300 italic truncate max-w-xs" title={app.reason}>Reason: {app.reason}</p>
                                       <p className="text-xs text-gray-500 mt-1">Appt ID: {app.id} / Patient ID: {app.patient_id}</p>
                                   </div>
+                                  {/* Status and Update Dropdown */}
                                   <div className="flex items-center space-x-2 self-end sm:self-center">
                                        <span className={`text-xs font-bold px-2 py-1 rounded-full whitespace-nowrap ${
                                            app.status === 'Completed' ? 'bg-green-800 text-green-200' :
@@ -543,7 +634,8 @@ const DoctorDashboard = () => {
       </main>
 
       {/* Modals */}
-      {selectedPatient && <PatientEHRModal patient={selectedPatient} onClose={() => setSelectedPatient(null)} onDataChange={fetchData} />}
+      {/* ✅ UPDATED: Pass the full 'doctors' list to the EHR modal */}
+      {selectedPatient && <PatientEHRModal patient={selectedPatient} onClose={() => setSelectedPatient(null)} onDataChange={fetchData} doctors={doctors} />}
       {isNewEHRModalOpen && <NewEHRModal patientId={patientForNewEHR} onClose={() => setIsNewEHRModalOpen(false)} onDataChange={fetchData} />}
       {isAllPatientsModalOpen && <PatientListModal title="All Patients" patients={allPatients} onClose={() => setIsAllPatientsModalOpen(false)} onSelectPatient={viewPatientEHR} onAddNewEHR={openNewEHRModal} />}
       {isAppointmentModalOpen && <DoctorAppointmentModal appointments={appointments} patients={allPatients} onClose={() => setIsAppointmentModalOpen(false)} onUpdateStatus={handleUpdateStatus}/>}
